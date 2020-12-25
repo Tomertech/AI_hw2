@@ -6,6 +6,7 @@ from players.AbstractPlayer import AbstractPlayer
 import numpy as np  # TODO consider importing only in AbstractPlayer
 import utils
 import copy
+import time
 
 
 # TODO: you can import more modules, if needed
@@ -46,15 +47,29 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
+        time_counter, time_diff, next_depth_time_estimation, depth = 0, 0, 0, 1
         self.scores = players_score
         self.update_players_pos()  # get the current pos of players from board
         best_new_move_score, best_new_move_direction = float('-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
                                   self.moves_counter)
-        for depth in range(1, 8):
+
+        while time_limit - (time_counter + next_depth_time_estimation) > 0:
+            start_time = time.time()
+
             score, move = self.minimax.search(copy.deepcopy(player_state), depth, maximizing_player=True)
             if score > best_new_move_score:  # we update it there is a better score OR if best_new_move_direction is None to get at least one valid move
                 best_new_move_score, best_new_move_direction = score, move
+            # if we found a winning move - break
+            if best_new_move_score == float('inf'):
+                break
+
+            time_diff = time.time() - start_time
+
+            time_counter += time_diff
+            next_depth_time_estimation = self.calc_next_depth_time_estimation(time_diff)
+            depth += 1
+            print("time:", time_counter, "time left:", (time_limit-time_counter), "next_depth_time_estimation", next_depth_time_estimation, "depth:", depth)
 
         next_pos = self.player_pos[0] + best_new_move_direction[0], self.player_pos[1] + best_new_move_direction[1]
 
@@ -138,12 +153,12 @@ class Player(AbstractPlayer):
     # we only care about the relative score - meaning if we win we don't care by how much
     # if we win return infinity, if we lose return -infinity
     def utility(self, state):
-        print("~~~~~~~~~ in utility ~~~~~~~~~")
+        # print("~~~~~~~~~ in utility ~~~~~~~~~")
         win_value, lose_value, tie_value = float('inf'), float('-inf'), 0
         my_score = state.scores[0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
         rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else state.scores[1]
 
-        print("my_score", my_score, "rival_score", rival_score)
+        # print("my_score", my_score, "rival_score", rival_score)
         if my_score > rival_score:
             return win_value
         elif my_score < rival_score:
@@ -214,3 +229,16 @@ class Player(AbstractPlayer):
                                    self.is_valid_pos(next_position, self.board)]
         pos = possible_next_positions[0]
         return pos[0] - self.player_pos[0], pos[1] - self.player_pos[1]
+
+    def calc_next_depth_time_estimation(self, current_depth_time):
+
+        # number_of_states = np.power(3, current_depth_time)
+        # time_to_develop_state = current_depth_time / number_of_states
+        # next_number_of_states = 3 * number_of_states
+        # return next_number_of_states * time_to_develop_state
+
+        # return 0.007 * np.exp(0.8*(last_depth+1))
+
+        return 3 * current_depth_time
+
+

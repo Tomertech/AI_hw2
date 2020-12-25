@@ -7,7 +7,6 @@ import copy
 
 # TODO: you can import more modules, if needed
 
-
 class SearchAlgos:
     def __init__(self, utility, succ, perform_move, goal=None, real_state=None):
         """The constructor for all the search algos.
@@ -25,7 +24,6 @@ class SearchAlgos:
 
     def search(self, state, depth, maximizing_player):
         pass
-
 
 class MiniMax(SearchAlgos):
 
@@ -167,9 +165,11 @@ class MiniMax(SearchAlgos):
         # print("fruit in pos:", fruit_pos, "will remain until I get there? :", res)
         return number_of_moves_until_fruit_disappears >= number_of_moves_to_fruit_pos
 
+    # gets a COPY of the board
     # return number of free tiles ahead
     def number_of_future_moves(self, pos, board):
         future_moves_counter = 0
+        copy_board = board
         all_next_positions = [utils.tup_add(pos, direction) for direction in utils.get_directions()]
         possible_next_positions = [next_position for next_position in all_next_positions if
                                    self.is_valid_pos(next_position, board)]  # save only valid positions
