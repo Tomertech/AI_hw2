@@ -54,7 +54,8 @@ class Player(AbstractPlayer):
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
                                   self.moves_counter)
 
-        while time_limit - (time_counter + next_depth_time_estimation) > 0:
+        safe_time = 0.5
+        while time_limit - (time_counter + next_depth_time_estimation + safe_time) > 0:
             start_time = time.time()
 
             score, move = self.minimax.search(copy.deepcopy(player_state), depth, maximizing_player=True)

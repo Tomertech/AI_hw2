@@ -3,20 +3,24 @@ MiniMax Player with AlphaBeta pruning
 """
 from SearchAlgos import AlphaBeta
 from players.AbstractPlayer import AbstractPlayer
-import numpy as np #TODO consider importing only in AbstractPlayer
-import utils#TODO: you can import more modules, if needed
+import numpy as np  # TODO consider importing only in AbstractPlayer
+import utils  # TODO: you can import more modules, if needed
+import time
+import copy
 
 
 class Player(AbstractPlayer):
     def __init__(self, game_time, penalty_score):
-        AbstractPlayer.__init__(self, game_time, penalty_score) # keep the inheritance of the parent's (AbstractPlayer) __init__()
-        #TODO: initialize more fields, if needed, and the AlphaBeta algorithm from SearchAlgos.py
+        AbstractPlayer.__init__(self, game_time,
+                                penalty_score)  # keep the inheritance of the parent's (AbstractPlayer) __init__()
+        # TODO: initialize more fields, if needed, and the AlphaBeta algorithm from SearchAlgos.py
         # From HW - we will not use the parameter game_time
         self.board = None
-        self.pos = None
-        self.time_left = None
+        self.player_pos = None
+        self.rival_pos = None
         self.alphabeta = AlphaBeta(self.utility, self.succ, self.perform_move, self.goal)
-        self.score = 0
+        self.scores = [0, 0]
+        self.moves_counter = 0
 
     def set_game_params(self, board):
         """Set the game parameters needed for this player.
@@ -26,12 +30,13 @@ class Player(AbstractPlayer):
             - board: np.array, a 2D matrix of the board.
         No output is expected.
         """
-        #TODO: erase the following line and implement this function.
+        # TODO: erase the following line and implement this function.
         # raise NotImplementedError
         self.board = board
-        pos = np.where(board == 1)
-        # convert pos to tuple of ints
-        self.pos = tuple(ax[0] for ax in pos)
+        player_pos = np.where(board == 1)
+        rival_pos = np.where(board == 2)
+        self.player_pos = tuple(ax[0] for ax in player_pos)
+        self.rival_pos = tuple(ax[0] for ax in rival_pos)
 
     def make_move(self, time_limit, players_score):
         """Make move with this Player.
@@ -40,21 +45,45 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
-        #TODO: erase the following line and implement this function.
+        # TODO: erase the following line and implement this function.
         # raise NotImplementedError
-        state = self.state(self.board, self.pos, time_limit, players_score, True, self.penalty_score)
-        best_new_move = (float('-inf'), None)
-        for depth in range(1, 5):
-            res = self.alphabeta.search(state, depth, True)
-            if res[0] > best_new_move[0]:
-                best_new_move = res
+        time_counter, time_diff, next_depth_time_estimation, depth = 0, 0, 0, 1
+        self.scores = players_score
+        self.update_players_pos()  # get the current pos of players from board
+        best_new_move_score, best_new_move_direction = float(
+            '-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
+        player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
+                                  self.moves_counter)
+        safe_time = 0.5
+        while time_limit - (time_counter + next_depth_time_estimation + safe_time) > 0:
+            start_time = time.time()
 
-        self.score += self.board[best_new_move[1]]
-        self.board[self.pos] = -1
-        self.board[best_new_move[1]] = 1
+            score, move = self.alphabeta.search(copy.deepcopy(player_state), depth, maximizing_player=True)
+            if score > best_new_move_score:  # we update it there is a better score OR if best_new_move_direction is None to get at least one valid move
+                best_new_move_score, best_new_move_direction = score, move
+            # if we found a winning move - break
+            if best_new_move_score == float('inf'):
+                break
 
-        return best_new_move[1]
+            time_diff = time.time() - start_time
 
+            time_counter += time_diff
+            next_depth_time_estimation = self.calc_next_depth_time_estimation(time_diff)
+            depth += 1
+            print("time:", time_counter, "time left:", (time_limit - time_counter), "next_depth_time_estimation",
+                  next_depth_time_estimation, "depth:", depth)
+
+        next_pos = self.player_pos[0] + best_new_move_direction[0], self.player_pos[1] + best_new_move_direction[1]
+
+        # update Player's fields: scores, player pos, moves counter
+        previous_position = self.player_pos
+        self.player_pos = next_pos
+        self.moves_counter += 1  # in order to keep track on moves number for heuristic (fruits disappear after x turns)
+
+        # update Player's board: score
+        self.board[previous_position] = -1
+        self.board[next_pos] = 1
+        return best_new_move_direction
 
     def set_rival_move(self, pos):
         """Update your info, given the new position of the rival.
@@ -62,11 +91,13 @@ class Player(AbstractPlayer):
             - pos: tuple, the new position of the rival.
         No output is expected
         """
-        #TODO: erase the following line and implement this function.
+        # TODO: erase the following line and implement this function.
         # raise NotImplementedError
-        self.board[pos] = -1
+        self.board[self.rival_pos] = -1
+        self.rival_pos = pos
+        self.board[self.rival_pos] = 2
 
-
+    # TODO do this
     def update_fruits(self, fruits_on_board_dict):
         """Update your info on the current fruits on board (if needed).
         input:
@@ -75,63 +106,148 @@ class Player(AbstractPlayer):
                                     'value' is the value of this fruit.
         No output is expected.
         """
-        #TODO: erase the following line and implement this function. In case you choose not to use this function, 
+        # TODO: erase the following line and implement this function. In case you choose not to use this function,
         # use 'pass' instead of the following line.
         # raise NotImplementedError
         pass
 
-
-    ########## helper functions in class ##########
-    #TODO: add here helper functions in class, if needed
-    class state():
-        def __init__(self, board, pos, time_left, score, turn, penalty_score):
+    class state:
+        def __init__(self, board, player_pos, rival_pos, scores, penalty_score, moves_counter):
             self.board = board
-            self.pos = pos
-            self.time_left = time_left
-            self.score = score  # [0, 0]
-            self.turn = turn  # boolean if true then it's our player, and false if it's a rival player
+            self.player_pos = player_pos  # player 1 position
+            self.rival_pos = rival_pos  # player 2 position
+            self.scores = scores  # [my score, rival's score]
             self.penalty_score = penalty_score
+            self.moves_counter = moves_counter
 
-        # def get_directions(self, state):
-        #     return (self.pos[0] - state.pos[0], self.pos[1] - state.pos[1])
+        def get_player_directions_by_pos(self, pos):
+            # print("get_player_directions:", state.player_pos[0] - self.player_pos[0], state.player_pos[1] - self.player_pos[1])
+            return pos[0] - self.player_pos[0], pos[1] - self.player_pos[1]
+
+        def get_player_directions(self, state):
+            # print("get_player_directions:", state.player_pos[0] - self.player_pos[0], state.player_pos[1] - self.player_pos[1])
+            return state.player_pos[0] - self.player_pos[0], state.player_pos[1] - self.player_pos[1]
+
+        def update_players_pos(self):
+            self.player_pos = tuple(ax[0] for ax in np.where(self.board == 1))
+            self.rival_pos = tuple(ax[0] for ax in np.where(self.board == 2))
+
+        ########## helper functions for alphabeta algorithm ##########
+
+        def delete_unreachable_fruits(self):
+            """Update your info on the current fruits on board (if needed).
+            input:
+                - fruits_on_board_dict: dict of {pos: value}
+                                        where 'pos' is a tuple describing the fruit's position on board,
+                                        'value' is the value of this fruit.
+            No output is expected.
+            """
+            # TODO: erase the following line and implement this function. In case you choose not to use it, use 'pass' instead of the following line.
+            # raise NotImplementedError
+            for r in range(len(self.board)):
+                for c in range(len(self.board[0])):
+                    if self.board[r][c] > 2 and self.is_fruit_disappear(
+                            (r, c)):  # if there is a fruit and it should disappear
+                        self.board[r][c] = 0  # delete fruit
+
+        def is_fruit_disappear(self, fruit_pos):
+            number_of_moves_to_fruit_pos = self.get_md(self.player_pos, fruit_pos)
+            min_rectangle_side = min(len(self.board), len(self.board[0]))
+            number_of_moves_until_fruit_disappears = min_rectangle_side - self.moves_counter
+            # returns True if fruit will disappear before we are able to get them
+            return number_of_moves_until_fruit_disappears < number_of_moves_to_fruit_pos
+
+        def get_md(self, from_pos, to_pos):
+            md = abs(to_pos[0] - from_pos[0]) + abs(to_pos[1] - from_pos[1])
+            assert md != 0
+            return abs(to_pos[0] - from_pos[0]) + abs(to_pos[1] - from_pos[1])
 
     ########## helper functions for AlphaBeta algorithm ##########
-    #TODO: add here the utility, succ, and perform_move functions used in AlphaBeta algorithm
+    # TODO: add here the utility, succ, and perform_move functions used in AlphaBeta algorithm
     def utility(self, state):
-        # if both players can't move then the player doesn't receive a penalty score
-        if not self.can_move(np.where(state.board == 2), state.board):
-            return state.score
-        else:
-            return state.score - state.penalty_score
+        # print("~~~~~~~~~ in utility ~~~~~~~~~")
+        win_value, lose_value, tie_value = float('inf'), float('-inf'), 0
+        my_score = state.scores[
+                       0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
+        rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else \
+            state.scores[1]
 
-    def succ(self, state):
-        all_next_positions = [utils.tup_add(state.pos, direction) for direction in utils.get_directions()]
-        possible_next_positions = [pos for pos in all_next_positions if self.can_move(pos, self.board)]
+        # print("my_score", my_score, "rival_score", rival_score)
+        if my_score > rival_score:
+            return win_value
+        elif my_score < rival_score:
+            return lose_value
+        else:  # it's a Tie
+            return tie_value
+
+    def succ(self, state, maximizing_player):
+        player = 1 if maximizing_player else 2  # set the right next player
+        current_player_pos = state.player_pos if maximizing_player else state.rival_pos  # find current player position
+        all_next_positions = [utils.tup_add(current_player_pos, direction) for direction in utils.get_directions()]
+        possible_next_positions = [next_position for next_position in all_next_positions if
+                                   self.is_valid_pos(next_position, state.board)]  # save only valid positions
         children = []
-        for pos in possible_next_positions:
-            board = np.copy(state.board)
-            child_score = state.score + board[pos[0]][pos[1]]
-            board[state.pos[0]][state.pos[1]] = -1  # TODO check if self.map[prev_pos[1]][prev_pos[0]] = -1
-            board[pos[0]][pos[1]] = 1  # TODO if we assume the player is always 1
-            child = self.state(board, pos, state.time_left, child_score, not state.turn,
-                               self.penalty_score)  # TODO should we update the time left?
+
+        for next_pos in possible_next_positions:
+            # child = self.state(copy.deepcopy(state.board), copy.deepcopy(state.player_pos), copy.deepcopy(state.rival_pos), copy.deepcopy(state.scores), copy.deepcopy(state.penalty_score), copy.deepcopy(state.moves_counter) + 1)  # create a child like its parent state, then update it
+            child = copy.deepcopy(state)
+            child.board[current_player_pos] = -1  # mark visited in previous position
+            child.scores[player - 1] += state.board[
+                next_pos]  # add score from next position on board to relevant player
+            child.board[next_pos] = player  # move player to next position
+            if maximizing_player:
+                child.moves_counter += 1
+            child.update_players_pos()
+            # child.delete_unreachable_fruits()
             children.append(child)
+
         return children
 
-    def perform_move(self):  # TODO find out what does it do
+
+    def perform_move(self):
         pass
 
-    def can_move(self, pos, board):
-        on_board = (0 <= pos[0] < len(board) and 0 <= pos[1] < len(board[0]))
+        # gets a position to check, returns True if we can move to this position, False otherwise
+
+    def is_valid_pos(self, checking_pos, board):
+        on_board = ((0 <= checking_pos[0] < len(board)) and (0 <= checking_pos[1] < len(board[0])))
         if not on_board:
             return False
+        is_valid_cell = board[checking_pos] not in [-1, 1, 2]
+        return is_valid_cell
 
-        value_in_pos = board[pos[0]][pos[1]]
-        free_cell = (value_in_pos not in [-1, 1, 2])
-        return free_cell
+        # returns True if state is goal
 
     def goal(self, state):
-        # how to know if there is no more time left?
-        all_next_positions = [utils.tup_add(state.pos, direction) for direction in utils.get_directions()]
-        possible_next_positions = [pos for pos in all_next_positions if self.can_move(pos, state.board)]
+        return self.is_stuck(state.player_pos, state.board)
+
+        # return True if there is no place to go from given position (aka goal)
+
+    def is_stuck(self, pos, board):
+        all_next_positions = [utils.tup_add(pos, direction) for direction in utils.get_directions()]
+        possible_next_positions = [next_pos for next_pos in all_next_positions if self.is_valid_pos(next_pos, board)]
         return len(possible_next_positions) == 0
+
+    def update_players_pos(self):
+        self.player_pos = tuple(ax[0] for ax in np.where(self.board == 1))
+        self.rival_pos = tuple(ax[0] for ax in np.where(self.board == 2))
+
+        # return any valid move
+
+    def get_a_valid_move(self):
+        all_next_positions = [utils.tup_add(self.player_pos, direction) for direction in utils.get_directions()]
+        possible_next_positions = [next_position for next_position in all_next_positions if
+                                   self.is_valid_pos(next_position, self.board)]
+        pos = possible_next_positions[0]
+        return pos[0] - self.player_pos[0], pos[1] - self.player_pos[1]
+
+    def calc_next_depth_time_estimation(self, current_depth_time):
+
+        # number_of_states = np.power(3, current_depth_time)
+        # time_to_develop_state = current_depth_time / number_of_states
+        # next_number_of_states = 3 * number_of_states
+        # return next_number_of_states * time_to_develop_state
+
+        # return 0.007 * np.exp(0.8*(last_depth+1))
+
+        return 3 * current_depth_time
