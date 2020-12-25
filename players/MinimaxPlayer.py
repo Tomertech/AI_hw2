@@ -138,12 +138,12 @@ class Player(AbstractPlayer):
     # we only care about the relative score - meaning if we win we don't care by how much
     # if we win return infinity, if we lose return -infinity
     def utility(self, state):
-        print("~~~~~~~~~ in utility ~~~~~~~~~")
+        # print("~~~~~~~~~ in utility ~~~~~~~~~")
         win_value, lose_value, tie_value = float('inf'), float('-inf'), 0
         my_score = state.scores[0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
         rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else state.scores[1]
 
-        print("my_score", my_score, "rival_score", rival_score)
+        # print("my_score", my_score, "rival_score", rival_score)
         if my_score > rival_score:
             return win_value
         elif my_score < rival_score:

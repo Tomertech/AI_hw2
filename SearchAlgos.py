@@ -3,6 +3,7 @@
 import numpy as np
 import utils
 from utils import ALPHA_VALUE_INIT, BETA_VALUE_INIT
+from operator import  itemgetter
 import copy
 
 # TODO: you can import more modules, if needed
@@ -31,76 +32,30 @@ class MiniMax(SearchAlgos):
 
     def heuristic(self, state):
 
-        # min_dist_to_fruit = self.get_min_dist_to_fruit(state.board)
-        # if len(self.get_min_dist_to_fruit(state.board)) == 0:
-        #     return 0
-        #
-        # min_dist_fruit_location = min(min_dist_to_fruit,
-        #                               key=lambda fruit_loc: fruit_loc[1] + fruit_loc[2])
-        #
-        # return (min_dist_fruit_location[0]) / (min_dist_fruit_location[1] + min_dist_fruit_location[2])
-        # res = state.scores[0] + self.moves_score(state.board, state.pos)
+        # does not always win in situation it should have won
+        # consider changing weights
+        # consider normalizing the result
 
-        # w = 1
-        # moves_score = self.moves_score(state.board, state.pos)
-        # fruits_score = [1 / self.get_md(state.pos, fruit[1]) for fruit in self.reachable_fruits_positions(state.board)]
-        # reachable_fruits_positions = self.reachable_fruits_positions(state)
-        # fruits_score = [(fruit[0] / self.get_md(state.pos, fruit[1])) * (0.1 * self.get_md(self.get_rival_pos(state.board), fruit[1])) for fruit in reachable_fruits_positions]
+        w_fruit = 1
+        w_rival = 1
+        w_tiles = 1
 
-        # if len(reachable_fruits_positions) == 0:
-        #     return moves_score
-        # else:
-        #    return state.score[0]*10 + w * max(fruits_score, default=0) + (1 - w) * moves_score
+        scores = state.scores
 
-        # print("md: ", [self.get_md(state.pos, fruit[1]) for fruit in self.reachable_fruits_positions(state.board)])
-        # print("fruits pos: ", self.reachable_fruits_positions(state.board))
-        # print("fruits_score: ", fruits_score)
-        # res = state.scores[0] + w * max(fruits_score, default=0) + (1 - w) * moves_score
-        # print("res: ", res)
-        # print("moves counter: ", state.moves_counter)
-        # print("in heuristic; my score: ", state.scores[0], " rivals score: ", state.scores[1])
+        max_fruit_value, fruit_indicator = 0, 0
+        reachable_fruits_positions = self.reachable_fruits_positions(state)
+        if len(reachable_fruits_positions) > 0:
+            max_fruit_value = max(reachable_fruits_positions, key=itemgetter(0))[0]
+            fruit_indicator = scores[0] + max_fruit_value - state.penalty_score > scores[1]
 
-        # reachable_fruits_positions = self.reachable_fruits_positions(state)
-        # if len(reachable_fruits_positions) == 0:  # if no fruits - everything is deterministic
-        #     print("heuristic no fruits", state.scores[0] - state.scores[1])
-        #     return state.scores[0] - state.scores[1]  # my score - rivals score
-        # else:
-        #     w = 1
-        #     relative_score = (state.scores[0] - state.scores[1])
-        #     fruits_score = [(fruit[0] / self.get_md(state.player_pos, fruit[1])) * (0.1 * self.get_md(state.rival_pos, fruit[1])) for fruit in reachable_fruits_positions]
-        #     print("heuristic", w * max(fruits_score, default=0))
-        #     return w * max(fruits_score, default=0) + (1-w) * relative_score
+        score_of_free_tiles = self.number_of_future_moves(state.player_pos, copy.deepcopy(state.board)) - self.number_of_future_moves(state.rival_pos, copy.deepcopy(state.board))
 
-        # w1 =
-        # w2 =
-        # w3 =
+        closeness_to_rival = self.get_md(state.player_pos, state.rival_pos)
+        #consider adding indicator if reachable
+
+        return w_fruit * fruit_indicator * max_fruit_value + w_rival * 1/closeness_to_rival + w_tiles * score_of_free_tiles
 
 
-        #
-        # current_scores = state.scores
-        #
-        # # fruits
-        # def get_fruit_score(fruit):
-        #     return fruit[0]
-        #
-        # w1, w2, w3 = 1, 1, 1
-        #
-        # reachable_fruits_positions = self.reachable_fruits_positions(state)
-        # max_fruit_by_value = reachable_fruits_positions.sort(key=get_fruit_score)[0]
-        #
-        # fruit_indicator = 0
-        # if len(reachable_fruits_positions) > 0:
-        #     fruit_indicator = 1 if current_scores[0] + max_fruit_by_value - state.pentaly_score > current_scores[1] else 0
-        #
-        #
-        # # free tiles
-        # num_of_free_tiles = self.number_of_future_moves(state.player_pos, state.board)
-        #
-        # # closeness to rival
-        # #closeness_to_rival =
-        #
-        # return w1 * num_of_free_tiles + w2 * max_fruit_by_value * fruit_indicator  # + w3 * closeness_to_rival
-        return self.number_of_future_moves(state.player_pos, state.board)
 
     # returns: (best score, best direction)
     def search(self, state, depth, maximizing_player):
