@@ -3,8 +3,8 @@ MiniMax Player with AlphaBeta pruning
 """
 from SearchAlgos import AlphaBeta
 from players.AbstractPlayer import AbstractPlayer
-import numpy as np  # TODO consider importing only in AbstractPlayer
-import utils  # TODO: you can import more modules, if needed
+import numpy as np
+import utils
 import time
 import copy
 
@@ -31,8 +31,6 @@ class Player(AbstractPlayer):
             - board: np.array, a 2D matrix of the board.
         No output is expected.
         """
-        # TODO: erase the following line and implement this function.
-        # raise NotImplementedError
         self.board = board
         player_pos = np.where(board == 1)
         rival_pos = np.where(board == 2)
@@ -46,8 +44,7 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
-
-        next_depth_time_estimation = 0.01
+        next_depth_time_estimation = 0.01  # init to a small number
         depth = 1
         time_counter = 0
 
@@ -56,8 +53,8 @@ class Player(AbstractPlayer):
         best_new_move_score, best_new_move_direction = float('-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
                                   self.moves_counter)
-        safe_time = 0.1
-        while time_limit - (time_counter + next_depth_time_estimation + safe_time) > 0:
+        time_margin = 0.1
+        while time_limit - (time_counter + next_depth_time_estimation + time_margin) > 0:
             start_time = time.time()
 
             score, move = self.alphabeta.search(copy.deepcopy(player_state), depth, maximizing_player=True)
@@ -99,8 +96,6 @@ class Player(AbstractPlayer):
             - pos: tuple, the new position of the rival.
         No output is expected
         """
-        # TODO: erase the following line and implement this function.
-        # raise NotImplementedError
         self.board[self.rival_pos] = -1
         self.rival_pos = pos
         self.board[self.rival_pos] = 2

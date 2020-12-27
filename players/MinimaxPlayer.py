@@ -48,7 +48,7 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
-        next_depth_time_estimation = 0.01
+        next_depth_time_estimation = 0.01  # init to a small number
         depth = 1
         time_counter = 0
 
@@ -57,8 +57,8 @@ class Player(AbstractPlayer):
         best_new_move_score, best_new_move_direction = float('-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
                                   self.moves_counter)
-        safe_time = 0.1
-        while time_limit - (time_counter + next_depth_time_estimation + safe_time) > 0:
+        time_margin = 0.1
+        while time_limit - (time_counter + next_depth_time_estimation + time_margin) > 0:
             start_time = time.time()
 
             score, move = self.minimax.search(copy.deepcopy(player_state), depth, maximizing_player=True)
