@@ -21,6 +21,7 @@ class Player(AbstractPlayer):
         self.alphabeta = AlphaBeta(self.utility, self.succ, self.perform_move, self.goal)
         self.scores = [0, 0]
         self.moves_counter = 0
+        self.fruits_pos = None  # dict of: (pos[2], value)
 
     def set_game_params(self, board):
         """Set the game parameters needed for this player.
@@ -104,7 +105,7 @@ class Player(AbstractPlayer):
         self.rival_pos = pos
         self.board[self.rival_pos] = 2
 
-    # TODO do this
+    # update the fruits from fruits dict to the board
     def update_fruits(self, fruits_on_board_dict):
         """Update your info on the current fruits on board (if needed).
         input:
@@ -116,7 +117,15 @@ class Player(AbstractPlayer):
         # TODO: erase the following line and implement this function. In case you choose not to use this function,
         # use 'pass' instead of the following line.
         # raise NotImplementedError
-        pass
+
+        # for row in range(len(self.board)):
+        #     for col in range(len(self.board[0])):
+        #         if self.board[row][col] not in [-1, 0, 1, 2]:  # only fruits
+        #             self.board[row][col] = 0
+        #
+        # for fruit_pos, fruit_value in fruits_on_board_dict:
+        #     self.board[fruit_pos] = fruit_value
+        self.fruits_pos = fruits_on_board_dict
 
     class state:
         def __init__(self, board, player_pos, rival_pos, scores, penalty_score, moves_counter):
