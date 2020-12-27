@@ -47,20 +47,25 @@ class Player(AbstractPlayer):
         output:
             - direction: tuple, specifing the Player's movement, chosen from self.directions
         """
-        time_counter, time_diff, next_depth_time_estimation, depth = 0, 0, 0, 1
+        next_depth_time_estimation = 0.01
+        depth = 1
+        time_counter = 0
+
         self.scores = players_score
         self.update_players_pos()  # get the current pos of players from board
         best_new_move_score, best_new_move_direction = float('-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
                                   self.moves_counter)
-
-        safe_time = 0.5
+        safe_time = 0.1
         while time_limit - (time_counter + next_depth_time_estimation + safe_time) > 0:
             start_time = time.time()
 
             score, move = self.minimax.search(copy.deepcopy(player_state), depth, maximizing_player=True)
+            if move is None:  # no good direction to go to, just take a random valid move, so break. (best_new_move_direction is init to get_a_valid_move())
+                break
             if score > best_new_move_score:  # we update it there is a better score OR if best_new_move_direction is None to get at least one valid move
                 best_new_move_score, best_new_move_direction = score, move
+
             # if we found a winning move - break
             if best_new_move_score == float('inf'):
                 break
@@ -68,9 +73,13 @@ class Player(AbstractPlayer):
             time_diff = time.time() - start_time
 
             time_counter += time_diff
-            next_depth_time_estimation = self.calc_next_depth_time_estimation(time_diff)
+            next_depth_time_estimation = max(self.calc_next_depth_time_estimation(time_diff),
+                                             next_depth_time_estimation)
             depth += 1
-            print("time:", time_counter, "time left:", (time_limit-time_counter), "next_depth_time_estimation", next_depth_time_estimation, "depth:", depth)
+
+        print("minimax max depth:", depth)
+        # print("time:", time_counter, "time left:", (time_limit - time_counter), "next_depth_time_estimation",
+        #       next_depth_time_estimation, "depth:", depth)
 
         next_pos = self.player_pos[0] + best_new_move_direction[0], self.player_pos[1] + best_new_move_direction[1]
 

@@ -197,7 +197,7 @@ class MiniMax(SearchAlgos):
 class AlphaBeta(SearchAlgos):
     # same heuristics as minimax
     def heuristic(self, state):
-        return state.scores[0] - state.scores[1]  # TODO - change this, doesnt suppose to work!
+        return self.number_of_future_moves(state.player_pos, state.board)  # TODO - change this, doesnt suppose to work!
 
     def search(self, state, depth, maximizing_player, alpha=ALPHA_VALUE_INIT, beta=BETA_VALUE_INIT):
         """Start the AlphaBeta algorithm.
@@ -208,8 +208,6 @@ class AlphaBeta(SearchAlgos):
         :param: beta: beta value
         :return: A tuple: (The min max algorithm value, The direction in case of max node or None in min mode)
         """
-        # TODO: erase the following line and implement this function.
-        # raise NotImplementedError
 
         if self.goal(state):
             return self.utility(state), None
@@ -223,8 +221,8 @@ class AlphaBeta(SearchAlgos):
                 child_score, child_direction = self.search(child, depth - 1, maximizing_player=False, alpha=alpha, beta=beta)
                 if child_score > current_max_score:  # choose max child
                     current_max_score, current_max_direction = child_score, state.get_player_directions(child)
-                    alpha = current_max_score
-                if current_max_score >= beta:
+                alpha = max(alpha, current_max_score)
+                if current_max_score >= beta:  # if the current max score is greater or equal to beta, min node won't choose, so cut it
                     return float('inf'), current_max_direction
                 if current_max_score == float('inf'):
                     break
@@ -237,8 +235,8 @@ class AlphaBeta(SearchAlgos):
                 child_score, child_direction = self.search(child, depth - 1, maximizing_player=True, alpha=alpha, beta=beta)
                 if child_score < current_min_score:  # choose min child
                     current_min_score, current_min_direction = child_score, None
-                    beta = current_min_score
-                if current_min_score <= alpha:
+                beta = min(beta, current_min_score)
+                if current_min_score <= alpha:  # if the current min score is less or equal to alpha, max node won't choose it, so cut it
                     return float('-inf'), current_min_direction
                 if current_min_score == float('-inf'):
                     break
