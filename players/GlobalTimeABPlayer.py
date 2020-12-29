@@ -52,7 +52,7 @@ class Player(AbstractPlayer):
         best_new_move_score, best_new_move_direction = float(
             '-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
-                                  self.moves_counter)
+                                  self.moves_counter, self.fruits_pos)
         time_margin = 0.1
         time_for_turn = self.calc_time_for_this_turn()
         print("time_for_turn", time_for_turn, "time counter:", self.time_counter)
@@ -111,16 +111,28 @@ class Player(AbstractPlayer):
                                     'value' is the value of this fruit.
         No output is expected.
         """
-        self.fruits_pos = fruits_on_board_dict
+
+        if self.fruits_pos == fruits_on_board_dict:  # if no change return
+            return
+        else:
+            self.fruits_pos = fruits_on_board_dict
+        for row in range(len(self.board)):
+            for col in range(len(self.board[0])):
+                if self.board[row][col] not in [-1, 0, 1, 2]:  # only fruits
+                    self.board[row][col] = 0
+
+        for fruit_pos, fruit_value in fruits_on_board_dict.items():
+            self.board[fruit_pos] = fruit_value
 
     class state:
-        def __init__(self, board, player_pos, rival_pos, scores, penalty_score, moves_counter):
+        def __init__(self, board, player_pos, rival_pos, scores, penalty_score, moves_counter, fruits_pos):
             self.board = board
             self.player_pos = player_pos  # player 1 position
             self.rival_pos = rival_pos  # player 2 position
             self.scores = scores  # [my score, rival's score]
             self.penalty_score = penalty_score
             self.moves_counter = moves_counter
+            self.fruits_pos = fruits_pos
 
         def get_player_directions_by_pos(self, pos):
             # print("get_player_directions:", state.player_pos[0] - self.player_pos[0], state.player_pos[1] - self.player_pos[1])
@@ -133,8 +145,6 @@ class Player(AbstractPlayer):
         def update_players_pos(self):
             self.player_pos = tuple(ax[0] for ax in np.where(self.board == 1))
             self.rival_pos = tuple(ax[0] for ax in np.where(self.board == 2))
-
-        ########## helper functions for alphabeta algorithm ##########
 
         def delete_unreachable_fruits(self):
             """Update your info on the current fruits on board (if needed).
@@ -164,17 +174,13 @@ class Player(AbstractPlayer):
             assert md != 0
             return abs(to_pos[0] - from_pos[0]) + abs(to_pos[1] - from_pos[1])
 
-        ########## helper functions for AlphaBeta algorithm ##########
-        # TODO: add here the utility, succ, and perform_move functions used in AlphaBeta algorithm
-
     def utility(self, state):
         # print("~~~~~~~~~ in utility ~~~~~~~~~")
         win_value, lose_value, tie_value = float('inf'), float('-inf'), 0
-        my_score = state.scores[
-                       0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
-        rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else \
-            state.scores[1]
-
+        my_score = state.scores[0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
+        rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else state.scores[1]
+        rival_next_move_possible_score = 0 if self.is_stuck(state.rival_pos, state.board) else max([state.board[utils.tup_add(state.rival_pos, d)] for d in self.directions if self.is_valid_pos(utils.tup_add(state.rival_pos, d), state.board)])
+        rival_score += rival_next_move_possible_score
         # print("my_score", my_score, "rival_score", rival_score)
         if my_score > rival_score:
             return win_value
@@ -182,6 +188,7 @@ class Player(AbstractPlayer):
             return lose_value
         else:  # it's a Tie
             return tie_value
+
 
     def succ(self, state, maximizing_player):
         player = 1 if maximizing_player else 2  # set the right next player
@@ -209,8 +216,7 @@ class Player(AbstractPlayer):
     def perform_move(self):
         pass
 
-        # gets a position to check, returns True if we can move to this position, False otherwise
-
+    # gets a position to check, returns True if we can move to this position, False otherwise
     def is_valid_pos(self, checking_pos, board):
         on_board = ((0 <= checking_pos[0] < len(board)) and (0 <= checking_pos[1] < len(board[0])))
         if not on_board:
@@ -256,12 +262,14 @@ class Player(AbstractPlayer):
 
     def calc_time_for_this_turn(self):
         time_left = self.game_time - self.time_counter
-        rival_max_future_moves = self.number_of_future_moves(self.rival_pos, copy.deepcopy(self.board)) / 2
-        my_max_future_moves = self.number_of_future_moves(self.player_pos, copy.deepcopy(self.board)) / 2
-        max_expected_moves_until_game_over = min(my_max_future_moves, rival_max_future_moves) + 1  # so we won't get 0
-        return time_left / max_expected_moves_until_game_over
+        # rival_max_future_moves = self.number_of_future_moves(self.rival_pos, copy.deepcopy(self.board)) / 2
+        # my_max_future_moves = self.number_of_future_moves(self.player_pos, copy.deepcopy(self.board)) / 2
+        # max_expected_moves_until_game_over = min(my_max_future_moves, rival_max_future_moves) + 1  # so we won't get 0
+        number_of_white_tiles_in_board = self.number_of_white_tiles_in_board()
+        number_of_tiles_in_board = len(self.board) * len(self.board[0])
+        return min(time_left * 0.5, time_left * (number_of_white_tiles_in_board / number_of_tiles_in_board))
 
-    #needs copy of board
+    # needs COPY of board
     def number_of_future_moves(self, pos, board):
         future_moves_counter = 0
         copy_board = board
@@ -280,3 +288,11 @@ class Player(AbstractPlayer):
             future_moves_counter += self.number_of_future_moves(next_pos, board)  # get all number of future moves from next pos
 
         return future_moves_counter
+
+    def number_of_white_tiles_in_board(self):
+        counter = 0
+        for row in self.board:
+            for cell in row:
+                if cell not in [-1, 1, 2]:
+                    counter += 1
+        return counter

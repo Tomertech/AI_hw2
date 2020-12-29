@@ -52,9 +52,10 @@ class Player(AbstractPlayer):
         self.update_players_pos()  # get the current pos of players from board
         best_new_move_score, best_new_move_direction = float('-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
-                                  self.moves_counter)
+                                  self.moves_counter, self.fruits_pos)
+        max_possible_depth = self.number_of_white_tiles_in_board()
         time_margin = 0.1
-        while time_limit - (time_counter + next_depth_time_estimation + time_margin) > 0:
+        while time_limit - (time_counter + next_depth_time_estimation + time_margin) > 0 and depth <= max_possible_depth:
             start_time = time.time()
 
             score, move = self.alphabeta.search(copy.deepcopy(player_state), depth, maximizing_player=True)
@@ -64,7 +65,7 @@ class Player(AbstractPlayer):
                 best_new_move_score, best_new_move_direction = score, move
 
             # if we found a winning move - break
-            if best_new_move_score == float('inf'):
+            if best_new_move_score == float('inf') or self.is_only_move(move):
                 break
 
             time_diff = time.time() - start_time
@@ -109,27 +110,28 @@ class Player(AbstractPlayer):
                                     'value' is the value of this fruit.
         No output is expected.
         """
-        # TODO: erase the following line and implement this function. In case you choose not to use this function,
-        # use 'pass' instead of the following line.
-        # raise NotImplementedError
 
-        # for row in range(len(self.board)):
-        #     for col in range(len(self.board[0])):
-        #         if self.board[row][col] not in [-1, 0, 1, 2]:  # only fruits
-        #             self.board[row][col] = 0
-        #
-        # for fruit_pos, fruit_value in fruits_on_board_dict:
-        #     self.board[fruit_pos] = fruit_value
-        self.fruits_pos = fruits_on_board_dict
+        if self.fruits_pos == fruits_on_board_dict:  # if no change return
+            return
+        else:
+            self.fruits_pos = fruits_on_board_dict
+        for row in range(len(self.board)):
+            for col in range(len(self.board[0])):
+                if self.board[row][col] not in [-1, 0, 1, 2]:  # only fruits
+                    self.board[row][col] = 0
+
+        for fruit_pos, fruit_value in fruits_on_board_dict.items():
+            self.board[fruit_pos] = fruit_value
 
     class state:
-        def __init__(self, board, player_pos, rival_pos, scores, penalty_score, moves_counter):
+        def __init__(self, board, player_pos, rival_pos, scores, penalty_score, moves_counter, fruits_pos):
             self.board = board
             self.player_pos = player_pos  # player 1 position
             self.rival_pos = rival_pos  # player 2 position
             self.scores = scores  # [my score, rival's score]
             self.penalty_score = penalty_score
             self.moves_counter = moves_counter
+            self.fruits_pos = fruits_pos
 
         def get_player_directions_by_pos(self, pos):
             # print("get_player_directions:", state.player_pos[0] - self.player_pos[0], state.player_pos[1] - self.player_pos[1])
@@ -174,15 +176,13 @@ class Player(AbstractPlayer):
             return abs(to_pos[0] - from_pos[0]) + abs(to_pos[1] - from_pos[1])
 
     ########## helper functions for AlphaBeta algorithm ##########
-    # TODO: add here the utility, succ, and perform_move functions used in AlphaBeta algorithm
     def utility(self, state):
         # print("~~~~~~~~~ in utility ~~~~~~~~~")
         win_value, lose_value, tie_value = float('inf'), float('-inf'), 0
-        my_score = state.scores[
-                       0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
-        rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else \
-            state.scores[1]
-
+        my_score = state.scores[0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
+        rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else state.scores[1]
+        rival_next_move_possible_score = 0 if self.is_stuck(state.rival_pos, state.board) else max([state.board[utils.tup_add(state.rival_pos, d)] for d in self.directions if self.is_valid_pos(utils.tup_add(state.rival_pos, d), state.board)])
+        rival_score += rival_next_move_possible_score
         # print("my_score", my_score, "rival_score", rival_score)
         if my_score > rival_score:
             return win_value
@@ -190,6 +190,7 @@ class Player(AbstractPlayer):
             return lose_value
         else:  # it's a Tie
             return tie_value
+
 
     def succ(self, state, maximizing_player):
         player = 1 if maximizing_player else 2  # set the right next player
@@ -261,3 +262,15 @@ class Player(AbstractPlayer):
         # return 0.007 * np.exp(0.8*(last_depth+1))
 
         return 3 * current_depth_time
+
+    def is_only_move(self, move):
+        pos = utils.tup_add(self.player_pos, move)
+        return self.is_stuck(pos, self.board)
+
+    def number_of_white_tiles_in_board(self):
+        counter = 0
+        for row in self.board:
+            for cell in row:
+                if cell not in [-1, 1, 2]:
+                    counter += 1
+        return counter
