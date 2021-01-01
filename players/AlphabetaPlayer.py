@@ -50,12 +50,14 @@ class Player(AbstractPlayer):
 
         self.scores = players_score
         self.update_players_pos()  # get the current pos of players from board
-        best_new_move_score, best_new_move_direction = float('-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
+        best_new_move_score, best_new_move_direction = float(
+            '-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
                                   self.moves_counter, self.fruits_pos)
         max_possible_depth = self.number_of_white_tiles_in_board()
-        time_margin = 0.1
-        while time_limit - (time_counter + next_depth_time_estimation + time_margin) > 0 and depth <= max_possible_depth:
+        time_margin = 0.2
+        while time_limit - (
+                time_counter + next_depth_time_estimation + time_margin) > 0 and depth <= max_possible_depth:
             start_time = time.time()
 
             score, move = self.alphabeta.search(copy.deepcopy(player_state), depth, maximizing_player=True)
@@ -68,16 +70,15 @@ class Player(AbstractPlayer):
             if best_new_move_score == float('inf') or self.is_only_move(move):
                 break
 
-            time_diff = time.time() - start_time
-
-            time_counter += time_diff
-            next_depth_time_estimation = max(self.calc_next_depth_time_estimation(time_diff),
-                                             next_depth_time_estimation)
+            print("time counter:", time_counter, "time left:", (time_limit - time_counter),
+                  "next_depth_time_estimation",
+                  next_depth_time_estimation, "depth:", depth)
             depth += 1
 
-        print("alpha beta max depth:", depth)
-        # print("time:", time_counter, "time left:", (time_limit - time_counter), "next_depth_time_estimation",
-        #       next_depth_time_estimation, "depth:", depth)
+            time_diff = time.time() - start_time
+            time_counter += time_diff
+            next_depth_time_estimation = max(self.calc_next_depth_time_estimation(time_diff),
+                                             1.5 * next_depth_time_estimation)
 
         next_pos = self.player_pos[0] + best_new_move_direction[0], self.player_pos[1] + best_new_move_direction[1]
 
@@ -175,12 +176,13 @@ class Player(AbstractPlayer):
             assert md != 0
             return abs(to_pos[0] - from_pos[0]) + abs(to_pos[1] - from_pos[1])
 
-    ########## helper functions for AlphaBeta algorithm ##########
     def utility(self, state):
         # print("~~~~~~~~~ in utility ~~~~~~~~~")
         win_value, lose_value, tie_value = float('inf'), float('-inf'), 0
-        my_score = state.scores[0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
-        rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else state.scores[1]
+        my_score = state.scores[
+                       0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
+        rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else \
+        state.scores[1]
         # rival_next_move_possible_score = 0 if self.is_stuck(state.rival_pos, state.board) else max([state.board[utils.tup_add(state.rival_pos, d)] for d in self.directions if self.is_valid_pos(utils.tup_add(state.rival_pos, d), state.board)])
         # rival_score += rival_next_move_possible_score
         # print("my_score", my_score, "rival_score", rival_score)
@@ -190,7 +192,6 @@ class Player(AbstractPlayer):
             return lose_value
         else:  # it's a Tie
             return tie_value
-
 
     def succ(self, state, maximizing_player):
         player = 1 if maximizing_player else 2  # set the right next player

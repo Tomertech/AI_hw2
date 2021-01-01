@@ -57,7 +57,7 @@ class Player(AbstractPlayer):
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
                                   self.moves_counter, self.fruits_pos)
         max_possible_depth = self.number_of_white_tiles_in_board()
-        time_margin = 0.1
+        time_margin = 0.2
         while time_limit - (time_counter + next_depth_time_estimation + time_margin) > 0 and depth <= max_possible_depth:
             start_time = time.time()
 
@@ -75,7 +75,7 @@ class Player(AbstractPlayer):
 
             time_counter += time_diff
             next_depth_time_estimation = max(self.calc_next_depth_time_estimation(time_diff),
-                                             next_depth_time_estimation)
+                                             1.5 * next_depth_time_estimation)
             depth += 1
 
         print("minimax max depth:", depth)

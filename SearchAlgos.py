@@ -29,6 +29,7 @@ class SearchAlgos:
     def search(self, state, depth, maximizing_player):
         pass
 
+
 class MiniMax(SearchAlgos):
 
     # like original heuristic, BUT:
@@ -45,7 +46,8 @@ class MiniMax(SearchAlgos):
             if len(reachable_fruits) > 0:
                 # print("reachable_fruits:", reachable_fruits)
                 max_fruit_value = max(reachable_fruits, key=itemgetter(0))[0]
-                fruit_helpful = state.scores[0] + max_fruit_value - state.penalty_score > state.scores[1]  # check if it fruit score will help
+                fruit_helpful = state.scores[0] + max_fruit_value - state.penalty_score > state.scores[
+                    1]  # check if it fruit score will help
 
         # if fruit will make us win
         if fruit_helpful:
@@ -53,7 +55,8 @@ class MiniMax(SearchAlgos):
             return max_fruit_value + state.scores[0]
 
         else:  # try to avoid penalty score
-            score_of_tiles = self.number_of_future_moves(state.player_pos, copy.deepcopy(state.board)) - self.number_of_future_moves(
+            score_of_tiles = self.number_of_future_moves(state.player_pos,
+                                                         copy.deepcopy(state.board)) - self.number_of_future_moves(
                 state.rival_pos, copy.deepcopy(state.board))
             # print("heuristic score_of_tiles:", score_of_tiles)
             # print("player score:", state.scores[0], "rival score", state.scores[1])
@@ -61,7 +64,7 @@ class MiniMax(SearchAlgos):
 
     # returns: (best score, best direction)
 
-        # return state.scores[0] - state.scores[1]
+    # return state.scores[0] - state.scores[1]
 
     def search(self, state, depth, maximizing_player):
         """Start the MiniMax algorithm.
@@ -186,30 +189,8 @@ class MiniMax(SearchAlgos):
 
 
 class AlphaBeta(SearchAlgos):
+
     # same heuristics as minimax
-    def simple_heuristic(self, state):
-        # print("player score:", state.scores[0], "rival score", state.scores[1])
-        max_fruit_value, fruit_helpful = 0, False
-        # only if there are fruits on board (we get fruits_pos from outside)
-        # we check twice because first check with state.fruits_pos is really short, the other check takes more time
-        if len(state.fruits_pos) > 0:
-            reachable_fruits = self.reachable_fruits_positions_simple(state)
-            if len(reachable_fruits) > 0:
-                # print("reachable_fruits:", reachable_fruits)
-                max_fruit_value = max(reachable_fruits, key=itemgetter(0))[0]
-                fruit_helpful = state.scores[0] + max_fruit_value - state.penalty_score > state.scores[1]  # check if it fruit score will help
-
-        # if fruit will make us win
-        if fruit_helpful:
-            # print("heuristic fruit:", max_fruit_value)
-            return max_fruit_value + state.scores[0]
-
-        else:  # try to avoid penalty score
-            score_of_tiles = self.number_of_future_moves(state.player_pos, copy.deepcopy(state.board))
-            # print("heuristic score_of_tiles:", score_of_tiles)
-            # print("player score:", state.scores[0], "rival score", state.scores[1])
-            return score_of_tiles + state.scores[0]
-
     def heuristic(self, state):
         max_fruit_value, fruit_helpful = 0, False
 
@@ -218,7 +199,8 @@ class AlphaBeta(SearchAlgos):
             reachable_fruits = self.reachable_fruits_positions(state)
             if len(reachable_fruits) > 0:
                 max_fruit_value = max(reachable_fruits, key=itemgetter(0))[0]
-                fruit_helpful = state.scores[0] + max_fruit_value - state.penalty_score > state.scores[1]  # check if it fruit score will help
+                fruit_helpful = state.scores[0] + max_fruit_value - state.penalty_score > state.scores[
+                    1]  # check if it fruit score will help
 
         # if fruit will make us win
         if fruit_helpful:
@@ -364,7 +346,8 @@ class AlphaBeta_simple_heuristic(SearchAlgos):
             if len(reachable_fruits) > 0:
                 # print("reachable_fruits:", reachable_fruits)
                 max_fruit_value = max(reachable_fruits, key=itemgetter(0))[0]
-                fruit_helpful = state.scores[0] + max_fruit_value - state.penalty_score > state.scores[1]  # check if it fruit score will help
+                fruit_helpful = state.scores[0] + max_fruit_value - state.penalty_score > state.scores[
+                    1]  # check if it fruit score will help
 
         # if fruit will make us win
         if fruit_helpful:
