@@ -179,8 +179,8 @@ class Player(AbstractPlayer):
         win_value, lose_value, tie_value = float('inf'), float('-inf'), 0
         my_score = state.scores[0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
         rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else state.scores[1]
-        rival_next_move_possible_score = 0 if self.is_stuck(state.rival_pos, state.board) else max([state.board[utils.tup_add(state.rival_pos, d)] for d in self.directions if self.is_valid_pos(utils.tup_add(state.rival_pos, d), state.board)])
-        rival_score += rival_next_move_possible_score
+        # rival_next_move_possible_score = 0 if self.is_stuck(state.rival_pos, state.board) else max([state.board[utils.tup_add(state.rival_pos, d)] for d in self.directions if self.is_valid_pos(utils.tup_add(state.rival_pos, d), state.board)])
+        # rival_score += rival_next_move_possible_score
         # print("my_score", my_score, "rival_score", rival_score)
         if my_score > rival_score:
             return win_value
@@ -188,7 +188,6 @@ class Player(AbstractPlayer):
             return lose_value
         else:  # it's a Tie
             return tie_value
-
 
     def succ(self, state, maximizing_player):
         player = 1 if maximizing_player else 2  # set the right next player
