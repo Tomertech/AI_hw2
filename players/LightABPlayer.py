@@ -172,8 +172,8 @@ class Player(AbstractPlayer):
             # child = self.state(copy.deepcopy(state.board), copy.deepcopy(state.player_pos), copy.deepcopy(state.rival_pos), copy.deepcopy(state.scores), copy.deepcopy(state.penalty_score), copy.deepcopy(state.moves_counter) + 1)  # create a child like its parent state, then update it
             child = copy.deepcopy(state)
             child.board[current_player_pos] = -1  # mark visited in previous position
-            child.scores[player - 1] += state.board[
-                next_pos]  # add score from next position on board to relevant player
+            if child.moves_counter <= min(len(child.board), len(child.board[0])):  # update fruit only if it is still in the board when the predicting move is being calculated
+                child.scores[player - 1] += state.board[next_pos]  # add score from next position on board to relevant player
             child.board[next_pos] = player  # move player to next position
             if maximizing_player:
                 child.moves_counter += 1

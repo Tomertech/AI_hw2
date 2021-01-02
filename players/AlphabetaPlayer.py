@@ -70,9 +70,6 @@ class Player(AbstractPlayer):
             if best_new_move_score == float('inf') or self.is_only_move(move):
                 break
 
-            print("time counter:", time_counter, "time left:", (time_limit - time_counter),
-                  "next_depth_time_estimation",
-                  next_depth_time_estimation, "depth:", depth)
             depth += 1
 
             time_diff = time.time() - start_time
@@ -80,6 +77,8 @@ class Player(AbstractPlayer):
             next_depth_time_estimation = max(self.calc_next_depth_time_estimation(time_diff),
                                              1.5 * next_depth_time_estimation)
 
+        print("time counter:", time_counter, "time left:", (time_limit - time_counter), "next_depth_time_estimation", next_depth_time_estimation, "depth:", depth)
+        # print("time counter:", time_counter, "next est:", next_depth_time_estimation)
         next_pos = self.player_pos[0] + best_new_move_direction[0], self.player_pos[1] + best_new_move_direction[1]
 
         # update Player's fields: scores, player pos, moves counter
@@ -146,8 +145,6 @@ class Player(AbstractPlayer):
             self.player_pos = tuple(ax[0] for ax in np.where(self.board == 1))
             self.rival_pos = tuple(ax[0] for ax in np.where(self.board == 2))
 
-        ########## helper functions for alphabeta algorithm ##########
-
         def delete_unreachable_fruits(self):
             """Update your info on the current fruits on board (if needed).
             input:
@@ -179,8 +176,7 @@ class Player(AbstractPlayer):
     def utility(self, state):
         # print("~~~~~~~~~ in utility ~~~~~~~~~")
         win_value, lose_value, tie_value = float('inf'), float('-inf'), 0
-        my_score = state.scores[
-                       0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
+        my_score = state.scores[0] - state.penalty_score  # I'm here because it's a leaf (goal) - meaning I have no moves
         rival_score = (state.scores[1] - state.penalty_score) if self.is_stuck(state.rival_pos, state.board) else \
         state.scores[1]
         # rival_next_move_possible_score = 0 if self.is_stuck(state.rival_pos, state.board) else max([state.board[utils.tup_add(state.rival_pos, d)] for d in self.directions if self.is_valid_pos(utils.tup_add(state.rival_pos, d), state.board)])
@@ -202,11 +198,10 @@ class Player(AbstractPlayer):
         children = []
 
         for next_pos in possible_next_positions:
-            # child = self.state(copy.deepcopy(state.board), copy.deepcopy(state.player_pos), copy.deepcopy(state.rival_pos), copy.deepcopy(state.scores), copy.deepcopy(state.penalty_score), copy.deepcopy(state.moves_counter) + 1)  # create a child like its parent state, then update it
             child = copy.deepcopy(state)
             child.board[current_player_pos] = -1  # mark visited in previous position
-            child.scores[player - 1] += state.board[
-                next_pos]  # add score from next position on board to relevant player
+            if child.moves_counter <= min(len(child.board), len(child.board[0])):  # update fruit only if it is still in the board when the predicting move is being calculated
+                child.scores[player - 1] += state.board[next_pos]  # add score from next position on board to relevant player
             child.board[next_pos] = player  # move player to next position
             if maximizing_player:
                 child.moves_counter += 1
