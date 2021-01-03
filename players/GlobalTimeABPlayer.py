@@ -55,7 +55,7 @@ class Player(AbstractPlayer):
                                   self.moves_counter, self.fruits_pos)
         time_margin = 0.1
         time_for_turn = self.calc_time_for_this_turn()
-        print("time_for_turn", time_for_turn, "time counter:", self.time_counter)
+        # print("time_for_turn", time_for_turn, "time counter:", self.time_counter)
         while time_for_turn - (time_counter + next_depth_time_estimation + time_margin) > 0:
             start_time = time.time()
 
@@ -76,7 +76,7 @@ class Player(AbstractPlayer):
                                              next_depth_time_estimation)
             depth += 1
 
-        print("alpha beta max depth:", depth)
+        # print("alpha beta max depth:", depth)
         # print("time:", time_counter, "time left:", (time_limit - time_counter), "next_depth_time_estimation",
         #       next_depth_time_estimation, "depth:", depth)
 

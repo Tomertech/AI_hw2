@@ -78,7 +78,7 @@ class Player(AbstractPlayer):
                                              1.5 * next_depth_time_estimation)
             depth += 1
 
-        print("minimax max depth:", depth)
+        # print("minimax max depth:", depth)
         # print("time:", time_counter, "time left:", (time_limit - time_counter), "next_depth_time_estimation",
         #       next_depth_time_estimation, "depth:", depth)
 
@@ -219,12 +219,6 @@ class Player(AbstractPlayer):
             child.update_players_pos()
             # child.delete_unreachable_fruits()
             children.append(child)
-
-            #TODO delete it
-            if not (np.count_nonzero(child.board == 1) == 1 and np.count_nonzero(child.board == 2) == 1):
-                print("(np.count_nonzero(child.board == 1)", np.count_nonzero(child.board == 1))
-                print("(np.count_nonzero(child.board == 2)", np.count_nonzero(child.board == 2))
-            assert np.count_nonzero(child.board == 1) == 1 and np.count_nonzero(child.board == 2) == 1
 
         return children
 
