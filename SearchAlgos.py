@@ -9,8 +9,6 @@ from utils import ALPHA_VALUE_INIT, BETA_VALUE_INIT
 import copy
 
 
-# TODO: you can import more modules, if needed
-
 class SearchAlgos:
     def __init__(self, utility, succ, perform_move, goal=None, real_state=None):
         """The constructor for all the search algos.
@@ -53,9 +51,6 @@ class MiniMax(SearchAlgos):
 
         # if fruit will make us win
         if fruit_helpful:
-            # print("all fruits:", state.fruits_pos)
-            # print("fruit value", max_fruit_value, "at:", max_fruit_pos)
-            # print("max_fruit_value + relative_score", max_fruit_value, "+", relative_score)
             return max_fruit_value + relative_score
 
         else:  # try to avoid penalty score
@@ -210,9 +205,6 @@ class AlphaBeta(SearchAlgos):
 
         # if fruit will make us win
         if fruit_helpful:
-            # print("all fruits:", state.fruits_pos)
-            # print("fruit value", max_fruit_value, "at:", max_fruit_pos)
-            # print("max_fruit_value + relative_score", max_fruit_value, "+", relative_score)
             return max_fruit_value + relative_score
 
         else:  # try to avoid penalty score

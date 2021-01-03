@@ -9,9 +9,6 @@ import copy
 import time
 
 
-# TODO: you can import more modules, if needed
-
-
 class Player(AbstractPlayer):
     def __init__(self, game_time, penalty_score):
         AbstractPlayer.__init__(self, game_time,
@@ -77,10 +74,6 @@ class Player(AbstractPlayer):
             next_depth_time_estimation = max(self.calc_next_depth_time_estimation(time_diff),
                                              1.5 * next_depth_time_estimation)
             depth += 1
-
-        # print("minimax max depth:", depth)
-        # print("time:", time_counter, "time left:", (time_limit - time_counter), "next_depth_time_estimation",
-        #       next_depth_time_estimation, "depth:", depth)
 
         next_pos = self.player_pos[0] + best_new_move_direction[0], self.player_pos[1] + best_new_move_direction[1]
 

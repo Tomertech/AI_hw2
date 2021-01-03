@@ -53,7 +53,7 @@ class Player(AbstractPlayer):
             '-inf'), self.get_a_valid_move()  # just a valid move so it won't be None
         player_state = self.state(self.board, self.player_pos, self.rival_pos, self.scores, self.penalty_score,
                                   self.moves_counter, self.fruits_pos)
-        time_margin = 0.1
+        time_margin = 0.2
         time_for_turn = self.calc_time_for_this_turn()
         # print("time_for_turn", time_for_turn, "time counter:", self.time_counter)
         while time_for_turn - (time_counter + next_depth_time_estimation + time_margin) > 0:
@@ -73,12 +73,8 @@ class Player(AbstractPlayer):
 
             time_counter += time_diff
             next_depth_time_estimation = max(self.calc_next_depth_time_estimation(time_diff),
-                                             next_depth_time_estimation)
+                                             1.5 * next_depth_time_estimation)
             depth += 1
-
-        # print("alpha beta max depth:", depth)
-        # print("time:", time_counter, "time left:", (time_limit - time_counter), "next_depth_time_estimation",
-        #       next_depth_time_estimation, "depth:", depth)
 
         next_pos = self.player_pos[0] + best_new_move_direction[0], self.player_pos[1] + best_new_move_direction[1]
 
